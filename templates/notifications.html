@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 760px;">
+  <h1 class="h3 mb-4"><i class="bi bi-bell text-accent"></i> Notifications</h1>
+  <div class="app-card">
+    {% for n in notifications %}
+      <div class="d-flex gap-3 p-3 {{ 'border-bottom' if not loop.last }}" style="border-color: var(--border) !important;">
+        <i class="bi {{ 'bi-circle' if n.is_read else 'bi-circle-fill' }} text-accent small mt-1"></i>
+        <div class="flex-grow-1">
+          {% if n.link %}<a href="{{ n.link }}" class="text-decoration-none">{{ n.message }}</a>{% else %}{{ n.message }}{% endif %}
+          <div class="small text-muted-soft">{{ n.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+        </div>
+      </div>
+    {% else %}
+      <p class="p-4 mb-0 text-center text-muted-soft">You have no notifications yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

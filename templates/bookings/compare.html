@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Compare providers{% endblock %}
+{% block content %}
+<div class="container">
+  <a href="{{ url_for('main.service_detail', service_id=service.id, city=city) }}" class="small"><i class="bi bi-arrow-left"></i> Back to providers</a>
+  <h1 class="h3 mt-2 mb-4">Compare {{ service.name }} providers</h1>
+  {% if not providers %}
+    <div class="app-card p-4 text-center text-muted-soft">These providers are no longer available.</div>
+  {% else %}
+    <div class="table-responsive app-card p-3">
+      <table class="table align-middle mb-0 text-center">
+        <thead>
+          <tr><th class="text-start">Detail</th>{% for p in providers %}<th class="text-body-emphasis fs-6">{{ p.name }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          <tr><td class="text-start">Match score</td>{% for p in providers %}<td><span class="score-ring">{{ p.score }}</span></td>{% endfor %}</tr>
+          <tr><td class="text-start">Rating</td>{% for p in providers %}<td>{{ ui.stars(p.avg_rating|float) }}<div class="small">{{ '%.1f'|format(p.avg_rating|float) }} ({{ p.total_reviews }})</div></td>{% endfor %}</tr>
+          <tr><td class="text-start">Experience</td>{% for p in providers %}<td>{{ p.experience_years }} years</td>{% endfor %}</tr>
+          <tr><td class="text-start">Charge</td>{% for p in providers %}<td class="text-mint fw-semibold">{{ p.charge|inr }}</td>{% endfor %}</tr>
+          <tr><td class="text-start">Why</td>{% for p in providers %}<td>{% for r in p.reasons %}<span class="reason-chip">{{ r }}</span>{% endfor %}</td>{% endfor %}</tr>
+          <tr><td></td>{% for p in providers %}<td><a class="btn btn-accent btn-sm" href="{{ url_for('booking.new', provider_id=p.id, service_id=service.id) }}">Book</a></td>{% endfor %}</tr>
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

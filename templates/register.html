@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+{% set role = form.get('role', 'customer') %}
+<div class="container">
+  <div class="app-card auth-card mx-auto p-4 p-md-5" style="max-width: 640px;">
+    <h1 class="h3 mb-1">Create your account</h1>
+    <p class="text-muted-soft mb-4">Book services as a customer, or join as a service provider.</p>
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="btn-group w-100 mb-4" role="group">
+        <input type="radio" class="btn-check" name="role" id="role-customer" value="customer" {{ 'checked' if role != 'provider' }}>
+        <label class="btn btn-outline-accent" for="role-customer"><i class="bi bi-person"></i> Customer</label>
+        <input type="radio" class="btn-check" name="role" id="role-provider" value="provider" {{ 'checked' if role == 'provider' }}>
+        <label class="btn btn-outline-accent" for="role-provider"><i class="bi bi-tools"></i> Provider</label>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="name">Full name</label>
+          <input class="form-control" id="name" name="name" value="{{ form.get('name', '') }}" maxlength="100" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="email">Email</label>
+          <input type="email" class="form-control" id="email" name="email" value="{{ form.get('email', '') }}" maxlength="150" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="phone">Phone (10 digits)</label>
+          <input class="form-control" id="phone" name="phone" value="{{ form.get('phone', '') }}" pattern="\d{10}" maxlength="10" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="city">City</label>
+          <input class="form-control" id="city" name="city" value="{{ form.get('city', '') }}" maxlength="60" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="address">Address <span class="text-muted-soft small">(optional)</span></label>
+          <input class="form-control" id="address" name="address" value="{{ form.get('address', '') }}" maxlength="255">
+        </div>
+
+        <div id="provider-fields" class="col-12 {{ '' if role == 'provider' else 'd-none' }}">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" for="experience_years">Experience (years)</label>
+              <input type="number" class="form-control" id="experience_years" name="experience_years"
+                     value="{{ form.get('experience_years', '0') }}" min="0" max="60">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label" for="bio">Short bio</label>
+              <input class="form-control" id="bio" name="bio" value="{{ form.get('bio', '') }}" maxlength="500"
+                     placeholder="e.g. Certified electrician, 24x7 service">
+            </div>
+            <div class="col-12 small text-muted-soft">
+              <i class="bi bi-info-circle"></i> Provider accounts are verified by the admin before customers can see them.
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" for="password">Password (min 8 characters)</label>
+          <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="confirm_password">Confirm password</label>
+          <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+        </div>
+      </div>
+      <button class="btn btn-accent w-100 mt-4" type="submit">Create account</button>
+    </form>
+    <p class="text-center small mt-4 mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

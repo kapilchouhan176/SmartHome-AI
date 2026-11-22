@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="h3 mb-4"><i class="bi bi-journal-text text-accent"></i> My bookings</h1>
+  {% for b in bookings %}
+    <div class="app-card p-3 p-md-4 mb-3">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-5">{{ ui.booking_summary(b, 'provider') }}</div>
+        <div class="col-6 col-md-3">
+          {{ ui.status_badge(b.status) }}
+          <div class="small text-mint mt-1">{{ b.estimated_cost|inr }}</div>
+          {% if b.cancel_reason %}<div class="small text-muted-soft">Reason: {{ b.cancel_reason }}</div>{% endif %}
+        </div>
+        <div class="col-6 col-md-4 text-end">
+          {% if b.status in ('pending', 'accepted') %}
+            <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#cancel-{{ b.id }}">
+              <i class="bi bi-x-circle"></i> Cancel
+            </button>
+          {% elif b.status == 'completed' and not b.review_id %}
+            <a href="{{ url_for('booking.review', booking_id=b.id) }}" class="btn btn-sm btn-accent"><i class="bi bi-star"></i> Write review</a>
+          {% elif b.review_id %}
+            <span class="small text-muted-soft"><i class="bi bi-check2"></i> Reviewed</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if b.status in ('pending', 'accepted') %}
+        <div class="collapse mt-3" id="cancel-{{ b.id }}">
+          <form method="post" action="{{ url_for('booking.update_status', booking_id=b.id) }}" class="d-flex flex-column flex-sm-row gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="cancelled">
+            <input class="form-control form-control-sm" name="reason" maxlength="255" placeholder="Reason (optional)">
+            <button class="btn btn-sm btn-danger text-nowrap" type="submit">Confirm cancel</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="app-card p-4 text-center">
+      <p class="mb-2">You haven't booked anything yet.</p>
+      <a href="{{ url_for('main.services') }}" class="btn btn-accent btn-sm">Browse services</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 720px;">
+  <h1 class="h3 mb-4"><i class="bi bi-person-circle text-accent"></i> My profile</h1>
+  <form method="post" class="app-card p-4" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="name">Full name</label>
+        <input class="form-control" id="name" name="name" value="{{ user.name }}" maxlength="100" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input class="form-control" value="{{ user.email }}" disabled>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="phone">Phone (10 digits)</label>
+        <input class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}" maxlength="10" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="city">City</label>
+        <input class="form-control" id="city" name="city" value="{{ user.city or '' }}" maxlength="60" required>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="address">Address</label>
+        <textarea class="form-control" id="address" name="address" rows="2" maxlength="255">{{ user.address or '' }}</textarea>
+      </div>
+    </div>
+    <button class="btn btn-accent mt-4" type="submit"><i class="bi bi-save"></i> Save changes</button>
+  </form>
+</div>
+{% endblock %}

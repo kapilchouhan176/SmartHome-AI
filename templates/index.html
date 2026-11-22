@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="container">
+  <section class="hero p-4 p-md-5 mb-5">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <span class="pill-badge mb-3"><span class="dot"></span> Verified pros in your city</span>
+        <h1 class="display-5 fw-bold mb-3">Home services, <span>sorted in minutes.</span></h1>
+        <p class="lead text-muted-soft mb-4">Describe your problem, get a smart service suggestion, pick a verified
+          professional near you and book a time slot — all in one place.</p>
+        <form method="post" action="{{ url_for('ai.suggest') }}" class="d-flex flex-column flex-sm-row gap-2 mb-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="problem" class="form-control form-control-lg" maxlength="1000"
+                 placeholder="e.g. My kitchen tap is leaking since morning" required>
+          <button class="btn btn-accent btn-lg text-nowrap" type="submit"><i class="bi bi-magic"></i> Suggest</button>
+        </form>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="check-chip"><i class="bi bi-check-lg"></i> Instant estimate</span>
+          <span class="check-chip"><i class="bi bi-check-lg"></i> Pick your time slot</span>
+          <span class="check-chip"><i class="bi bi-check-lg"></i> Rated professionals</span>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block">
+        <div class="hero-art">
+          <i class="bi bi-house-gear-fill"></i>
+          <span class="float-chip" style="top: 12%; left: -4%;"><i class="bi bi-star-fill stars"></i> Top rated</span>
+          <span class="float-chip" style="bottom: 14%; right: -4%;"><i class="bi bi-shield-check text-accent"></i> Verified</span>
+          <span class="float-chip" style="bottom: 4%; left: 6%;"><i class="bi bi-lightning-charge-fill text-blue"></i> AI match</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="d-flex justify-content-between align-items-end mb-3">
+    <h2 class="section-title mb-0">Our services</h2>
+    <a href="{{ url_for('main.services') }}" class="small">View all <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="row g-3 mb-5">
+    {% for s in services %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <a href="{{ url_for('main.service_detail', service_id=s.id) }}" class="text-decoration-none">
+          <div class="app-card hover-lift p-3 p-md-4 h-100 text-center">
+            <div class="icon-circle mb-2"><i class="bi {{ s.icon }}"></i></div>
+            <div class="fw-semibold text-body-emphasis">{{ s.name }}</div>
+            <div class="small text-muted-soft">from {{ s.base_price|inr }}</div>
+          </div>
+        </a>
+      </div>
+    {% else %}
+      <p class="text-muted-soft">No services available yet.</p>
+    {% endfor %}
+  </div>
+
+  <h2 class="section-title mb-3">How it works</h2>
+  <div class="row g-3">
+    {% for icon, title, text in [
+      ('bi-chat-dots', '1. Describe', 'Tell us the problem in your own words.'),
+      ('bi-magic', '2. Get a suggestion', 'Our AI suggests the right service.'),
+      ('bi-people', '3. Pick a pro', 'Compare verified providers in your city.'),
+      ('bi-calendar-check', '4. Book a slot', 'Choose a date and time that suits you.')] %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="app-card p-4 h-100">
+          <div class="icon-circle"><i class="bi {{ icon }}"></i></div>
+          <div class="fw-semibold mt-2">{{ title }}</div>
+          <div class="small text-muted-soft">{{ text }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

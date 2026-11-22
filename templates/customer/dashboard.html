@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+  {# ---------- Greeting + quick AI box ---------- #}
+  <section class="hero p-4 p-md-5 mb-4">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <h1 class="h3 mb-1">Hi, {{ current_user.name }} 👋</h1>
+        <p class="text-muted-soft mb-0">
+          {% if stats.total %}Here's what's happening with your bookings.{% else %}Welcome to SmartHome AI! Let's fix something at home.{% endif %}
+          {% if city %}<br><i class="bi bi-geo-alt text-accent"></i> Showing pros in <strong>{{ city }}</strong>
+          · <a href="{{ url_for('customer.profile') }}" class="small">change</a>{% endif %}
+        </p>
+      </div>
+      <div class="col-lg-6">
+        <form method="post" action="{{ url_for('ai.suggest') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="form-label small text-muted-soft" for="problem"><i class="bi bi-magic text-accent"></i> What needs fixing?</label>
+          <div class="d-flex flex-column flex-sm-row gap-2">
+            <input class="form-control" id="problem" name="problem" maxlength="1000" required
+                   placeholder="e.g. Fan is making noise and running slow">
+            <button class="btn btn-accent text-nowrap" type="submit">Suggest service</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  {# ---------- Stats ---------- #}
+  <div class="row g-3 mb-4">
+    {% for label, key, icon in [('Total bookings', 'total', 'bi-journal-text'), ('Active', 'active', 'bi-hourglass-split'),
+                                ('Completed', 'completed', 'bi-check2-circle'), ('Cancelled / Rejected', 'cancelled', 'bi-x-circle')] %}
+      <div class="col-6 col-lg-3">
+        <div class="app-card stat-card p-3 h-100 d-flex align-items-center gap-3">
+          <div class="icon-circle flex-shrink-0" style="width:44px;height:44px;font-size:1.2rem;"><i class="bi {{ icon }}"></i></div>
+          <div>
+            <div class="stat-value lh-1">{{ stats[key] }}</div>
+            <div class="stat-label">{{ label }}</div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ---------- Upcoming bookings (or getting-started steps) + notifications ---------- #}
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="app-card p-4 h-100">
+        {% if stats.total %}
+          <div class="d-flex justify-content-between mb-3">
+            <h2 class="h5 mb-0">Upcoming bookings</h2>
+            <a href="{{ url_for('booking.history') }}" class="small">All bookings</a>
+          </div>
+          {% for b in upcoming %}
+            <div class="d-flex justify-content-between align-items-start py-2 {{ 'border-bottom' if not loop.last }}" style="border-color: var(--border) !important;">
+              <div>{{ ui.booking_summary(b, 'provider') }}</div>
+              <div class="text-end">{{ ui.status_badge(b.status) }}<div class="small text-mint mt-1">{{ b.estimated_cost|inr }}</div></div>
+            </div>
+          {% else %}
+            <p class="text-muted-soft mb-0">No upcoming bookings right now. <a href="{{ url_for('main.services') }}">Book a service</a></p>
+          {% endfor %}
+        {% else %}
+          <h2 class="h5 mb-3">Get started in 3 steps</h2>
+          <div class="row g-3">
+            {% for icon, title, text, link, label in [
+              ('bi-chat-dots', 'Describe the problem', 'Type it in your own words above; our AI suggests the right service.', url_for('ai.suggest'), 'Try AI Suggest'),
+              ('bi-people', 'Pick a verified pro', 'Compare ranked providers in your city by rating, experience and price.', url_for('main.services'), 'Browse services'),
+              ('bi-calendar-check', 'Book a slot', 'Choose a date and time. The provider confirms and you track it here.', url_for('customer.profile'), 'Check your address')] %}
+              <div class="col-md-4">
+                <div class="p-3 h-100 rounded-3" style="background: var(--bg-soft);">
+                  <div class="icon-circle mb-2" style="width:44px;height:44px;font-size:1.2rem;"><i class="bi {{ icon }}"></i></div>
+                  <div class="fw-semibold small">{{ loop.index }}. {{ title }}</div>
+                  <div class="small text-muted-soft mb-2">{{ text }}</div>
+                  <a href="{{ link }}" class="small">{{ label }} <i class="bi bi-arrow-right"></i></a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="app-card p-4 h-100">
+        <div class="d-flex justify-content-between mb-3">
+          <h2 class="h5 mb-0">Notifications</h2>
+          <a href="{{ url_for('main.notifications') }}" class="small">See all</a>
+        </div>
+        {% for n in notifications %}
+          <div class="small mb-2"><i class="bi bi-dot text-accent"></i>{{ n.message }}</div>
+        {% else %}
+          <div class="text-center text-muted-soft py-3">
+            <i class="bi bi-bell-slash fs-3 d-block mb-1"></i>
+            <span class="small">You're all caught up. Booking updates will appear here.</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# ---------- Recommended (needs at least one booking) ---------- #}
+  {% if recommended %}
+    <h2 class="h5 mb-3"><i class="bi bi-stars text-accent"></i> Recommended for you
+      <span class="small text-muted-soft fw-normal">· customers who booked {{ recommended.based_on }} also booked</span></h2>
+    <div class="row g-3 mb-4">
+      {% for r in recommended['items'] %}
+        <div class="col-md-4">
+          <a href="{{ url_for('main.service_detail', service_id=r.id) }}" class="text-decoration-none">
+            <div class="app-card hover-lift p-3 h-100 d-flex align-items-center gap-3">
+              <div class="icon-circle"><i class="bi {{ r.icon }}"></i></div>
+              <div>
+                <div class="fw-semibold text-body-emphasis">{{ r.name }}</div>
+                <div class="small text-muted-soft">from {{ r.base_price|inr }}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# ---------- Popular services ---------- #}
+  <div class="d-flex justify-content-between align-items-end mb-3">
+    <h2 class="h5 mb-0"><i class="bi bi-fire text-accent"></i> Popular{% if city %} in {{ city }}{% endif %}</h2>
+    <a href="{{ url_for('main.services') }}" class="small">All services <i class="bi bi-arrow-right"></i></a>
+  </div>
+  <div class="row g-3 mb-4">
+    {% for s in popular %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <a href="{{ url_for('main.service_detail', service_id=s.id) }}" class="text-decoration-none">
+          <div class="app-card hover-lift p-3 h-100 text-center">
+            <div class="icon-circle mb-2"><i class="bi {{ s.icon }}"></i></div>
+            <div class="fw-semibold text-body-emphasis small">{{ s.name }}</div>
+            <div class="small text-muted-soft">from {{ s.base_price|inr }}</div>
+            {% if s.bookings %}<div class="small text-mint">{{ s.bookings }} booking{{ 's' if s.bookings != 1 }}</div>{% endif %}
+          </div>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ---------- Top-rated providers in the city ---------- #}
+  <h2 class="h5 mb-3"><i class="bi bi-award text-accent"></i> Top-rated pros{% if city %} in {{ city }}{% endif %}</h2>
+  <div class="row g-3">
+    {% for p in providers %}
+      <div class="col-md-6 col-lg-3">
+        <div class="app-card hover-lift p-3 h-100 d-flex flex-column">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="icon-circle flex-shrink-0" style="width:40px;height:40px;font-size:1rem;"><i class="bi bi-person-badge"></i></div>
+            <div class="fw-semibold small">{{ p.name }}</div>
+          </div>
+          <div class="small mb-1">{{ ui.stars(p.avg_rating|float) }}
+            <span class="text-muted-soft">{% if p.total_reviews %}{{ '%.1f'|format(p.avg_rating|float) }} ({{ p.total_reviews }}){% else %}New{% endif %}</span></div>
+          <div class="small text-muted-soft flex-grow-1">{{ p.services }} · {{ p.experience_years }} yrs exp</div>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="small text-mint">from {{ p.min_charge|inr }}</span>
+            <a href="{{ url_for('main.service_detail', service_id=p.service_id) }}" class="btn btn-outline-accent btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="app-card p-4 text-center text-muted-soft">
+          {% if city %}No verified providers in {{ city }} yet. Try another city from the <a href="{{ url_for('main.services') }}">services page</a>.
+          {% else %}Add your city in your <a href="{{ url_for('customer.profile') }}">profile</a> to see providers near you.{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

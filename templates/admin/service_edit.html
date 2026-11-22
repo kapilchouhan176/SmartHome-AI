@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ service.name }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 560px;">
+  <a href="{{ url_for('admin.services') }}" class="small"><i class="bi bi-arrow-left"></i> Back to services</a>
+  <h1 class="h3 mt-2 mb-4">Edit {{ service.name }}</h1>
+  <div class="app-card p-4">{% include "admin/_service_form.html" %}</div>
+</div>
+{% endblock %}

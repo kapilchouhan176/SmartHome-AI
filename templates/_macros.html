@@ -1,0 +1,53 @@
+{# Reusable bits of HTML. Import with: {% import "_macros.html" as ui %} #}
+
+{% macro status_badge(status) -%}
+  <span class="badge status-{{ status }}">{{ status|replace('_', ' ')|title }}</span>
+{%- endmacro %}
+
+{% macro sentiment_badge(sentiment, confidence=None) -%}
+  {% if sentiment %}
+    <span class="badge sentiment-{{ sentiment }}">{{ sentiment|title }}{% if confidence %} · {{ '%.0f'|format(confidence) }}%{% endif %}</span>
+  {% else %}
+    <span class="badge bg-secondary">Not analysed</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro stars(rating) -%}
+  <span class="stars">
+    {% for i in range(1, 6) %}<i class="bi {{ 'bi-star-fill' if rating >= i else ('bi-star-half' if rating >= i - 0.5 else 'bi-star') }}"></i>{% endfor %}
+  </span>
+{%- endmacro %}
+
+{# One small POST form that changes a booking's status #}
+{% macro status_button(booking_id, status, label, css='btn-accent', icon='') -%}
+  <form method="post" action="{{ url_for('booking.update_status', booking_id=booking_id) }}" class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="status" value="{{ status }}">
+    <button type="submit" class="btn btn-sm {{ css }}">{% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ label }}</button>
+  </form>
+{%- endmacro %}
+
+{# Buttons a provider sees for a booking, based on its status #}
+{% macro provider_actions(b) -%}
+  {% if b.status == 'pending' %}
+    {{ status_button(b.id, 'accepted', 'Accept', 'btn-accent', 'bi-check-lg') }}
+    {{ status_button(b.id, 'rejected', 'Reject', 'btn-outline-danger', 'bi-x-lg') }}
+  {% elif b.status == 'accepted' %}
+    {{ status_button(b.id, 'in_progress', 'Start Job', 'btn-accent', 'bi-play-fill') }}
+  {% elif b.status == 'in_progress' %}
+    {{ status_button(b.id, 'completed', 'Mark Completed', 'btn-accent', 'bi-check2-all') }}
+  {% endif %}
+{%- endmacro %}
+
+{% macro booking_summary(b, show='provider') -%}
+  <div class="fw-semibold"><i class="bi {{ b.service_icon }} text-accent"></i> {{ b.service_name }}
+    <span class="text-muted-soft small">#{{ b.id }}</span></div>
+  <div class="small text-muted-soft">
+    <i class="bi bi-calendar-event"></i> {{ b.booking_date.strftime('%d %b %Y') }} · {{ b.time_slot|slot }}
+    {% if b.is_urgent %}<span class="badge bg-danger ms-1">Urgent</span>{% endif %}
+  </div>
+  <div class="small">
+    {% if show == 'provider' %}<i class="bi bi-person-badge"></i> {{ b.provider_name }}
+    {% else %}<i class="bi bi-person"></i> {{ b.customer_name }} · <i class="bi bi-telephone"></i> {{ b.customer_phone or '-' }}{% endif %}
+  </div>
+{%- endmacro %}

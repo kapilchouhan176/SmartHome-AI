@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}{{ service.name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="app-card p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+      <div class="icon-circle"><i class="bi {{ service.icon }}"></i></div>
+      <div class="flex-grow-1">
+        <h1 class="h3 mb-1">{{ service.name }}</h1>
+        <p class="text-muted-soft mb-0">{{ service.description or '' }}</p>
+      </div>
+      <div class="text-md-end">
+        <div class="small text-muted-soft">Starting at</div>
+        <div class="h4 text-mint mb-0">{{ service.base_price|inr }}</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-sm-8 col-md-5">
+      <label class="form-label small" for="city">Show providers in city</label>
+      <input class="form-control" id="city" name="city" value="{{ city }}" placeholder="e.g. Mumbai" required>
+    </div>
+    <div class="col-sm-4 col-md-2">
+      <button class="btn btn-accent w-100" type="submit"><i class="bi bi-geo-alt"></i> Search</button>
+    </div>
+  </form>
+
+  {% if not city %}
+    <div class="app-card p-4 text-center text-muted-soft">Enter your city to see ranked providers.</div>
+  {% elif not providers %}
+    <div class="app-card p-4 text-center">
+      <p class="mb-1">No verified providers for {{ service.name }} in <strong>{{ city }}</strong> right now.</p>
+      <p class="small text-muted-soft mb-0">Try a nearby city or check back later.</p>
+    </div>
+  {% else %}
+    <form method="get" action="{{ url_for('booking.compare') }}">
+      <input type="hidden" name="service_id" value="{{ service.id }}">
+      <input type="hidden" name="city" value="{{ city }}">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">{{ providers|length }} provider(s) in {{ city }} <span class="small text-muted-soft">· ranked best first</span></h2>
+        <button id="compare-btn" type="submit" class="btn btn-outline-accent btn-sm" disabled>Compare (0)</button>
+      </div>
+      <div class="row g-3">
+        {% for p in providers %}
+          <div class="col-lg-6">
+            <div class="app-card hover-lift p-4 h-100">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <div class="fw-semibold fs-5">{% if loop.first %}<i class="bi bi-trophy-fill text-warning"></i> {% endif %}{{ p.name }}</div>
+                  <div class="small">{{ ui.stars(p.avg_rating|float) }} <span class="text-muted-soft">{{ '%.1f'|format(p.avg_rating|float) }} ({{ p.total_reviews }} reviews)</span></div>
+                </div>
+                <span class="score-ring" title="Match score out of 100">{{ p.score }}</span>
+              </div>
+              <div class="mb-2">{% for reason in p.reasons %}<span class="reason-chip">{{ reason }}</span>{% endfor %}</div>
+              <p class="small text-muted-soft mb-3">{{ p.bio or 'No bio yet.' }}</p>
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                  <span class="h5 text-mint mb-0">{{ p.charge|inr }}</span>
+                  <span class="small text-muted-soft">· {{ p.experience_years }} yrs exp</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input compare-box" type="checkbox" name="provider_ids" value="{{ p.id }}" id="cmp-{{ p.id }}">
+                    <label class="form-check-label small" for="cmp-{{ p.id }}">Compare</label>
+                  </div>
+                  <a class="btn btn-accent btn-sm" href="{{ url_for('booking.new', provider_id=p.id, service_id=service.id) }}">Book now</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </form>
+    <p class="small text-muted-soft mt-3"><i class="bi bi-info-circle"></i>
+      Score = rating 50% + experience 30% + price 20%. Only verified, available providers are shown.</p>
+  {% endif %}
+
+  {% if related %}
+    <h2 class="h5 mt-5 mb-3"><i class="bi bi-people text-accent"></i> Customers who booked {{ service.name }} also booked</h2>
+    <div class="row g-3">
+      {% for r in related %}
+        <div class="col-md-4">
+          <a href="{{ url_for('main.service_detail', service_id=r.id, city=city) }}" class="text-decoration-none">
+            <div class="app-card hover-lift p-3 h-100 d-flex align-items-center gap-3">
+              <div class="icon-circle"><i class="bi {{ r.icon }}"></i></div>
+              <div>
+                <div class="fw-semibold text-body-emphasis">{{ r.name }}</div>
+                <div class="small text-muted-soft">{{ r.customers }} customer(s) · from {{ r.base_price|inr }}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

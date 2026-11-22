@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Provider Dashboard{% endblock %}
+
+{% macro job_row(b, actions=True) %}
+  <div class="d-flex flex-column flex-md-row justify-content-between gap-2 py-3 border-bottom" style="border-color: var(--border) !important;">
+    <div>
+      {{ ui.booking_summary(b, 'customer') }}
+      <div class="small text-muted-soft"><i class="bi bi-geo-alt"></i> {{ b.address }}, {{ b.city }}</div>
+      {% if b.problem_description %}<div class="small mt-1">"{{ b.problem_description }}"</div>{% endif %}
+    </div>
+    <div class="text-md-end">
+      {{ ui.status_badge(b.status) }}
+      <div class="small text-mint my-1">{{ b.estimated_cost|inr }}</div>
+      {% if actions %}<div class="d-flex gap-1 justify-content-md-end">{{ ui.provider_actions(b) }}</div>{% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% block content %}
+<div class="container">
+  <h1 class="h3 mb-1">Hi, {{ current_user.name }}</h1>
+  <p class="text-muted-soft mb-3">Manage your requests and jobs.</p>
+
+  {% if provider.verification_status == 'pending' %}
+    <div class="alert alert-warning"><i class="bi bi-hourglass-split"></i> Your account is waiting for admin verification.
+      Customers can't see you yet. Meanwhile, <a href="{{ url_for('provider.services') }}">add your services</a>.</div>
+  {% elif provider.verification_status == 'rejected' %}
+    <div class="alert alert-danger"><i class="bi bi-x-octagon"></i> Your provider account was rejected by the admin. Please contact support.</div>
+  {% elif not provider.is_available %}
+    <div class="alert alert-info"><i class="bi bi-moon"></i> You are marked as unavailable. Turn it on in your <a href="{{ url_for('provider.profile') }}">profile</a> to get new bookings.</div>
+  {% endif %}
+
+  <div class="row g-3 mb-4">
+    {% for label, value, icon in [('Total jobs', stats.total, 'bi-briefcase'), ('New requests', stats.pending, 'bi-inbox'),
+                                  ('Completed', stats.completed, 'bi-check2-circle'), ('Earnings (est.)', stats.earnings|inr, 'bi-currency-rupee'),
+                                  ('Rating', '%.1f'|format(stats.rating) ~ ' ★', 'bi-star'), ('Reviews', stats.reviews, 'bi-chat-quote')] %}
+      <div class="col-6 col-md-4 col-xl-2">
+        <div class="app-card stat-card p-3 h-100">
+          <i class="bi {{ icon }} text-accent"></i>
+          <div class="stat-value">{{ value }}</div>
+          <div class="stat-label">{{ label }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="app-card p-4 mb-4">
+    <h2 class="h5 mb-0">New requests <span class="badge bg-warning text-dark">{{ requests|length }}</span></h2>
+    {% for b in requests %}{{ job_row(b) }}{% else %}<p class="text-muted-soft mt-3 mb-0">No new requests.</p>{% endfor %}
+  </div>
+
+  <div class="app-card p-4 mb-4">
+    <h2 class="h5 mb-0">Active jobs</h2>
+    {% for b in active %}{{ job_row(b) }}{% else %}<p class="text-muted-soft mt-3 mb-0">No active jobs.</p>{% endfor %}
+  </div>
+
+  <div class="app-card p-4">
+    <h2 class="h5 mb-0">History</h2>
+    {% for b in history %}{{ job_row(b, False) }}{% else %}<p class="text-muted-soft mt-3 mb-0">No past jobs yet.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

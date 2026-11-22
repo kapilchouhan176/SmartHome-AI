@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Book {{ offer.service_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="h3 mb-4">Book {{ offer.service_name }}</h1>
+  <form method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="provider_id" value="{{ offer.provider_id }}">
+    <input type="hidden" name="service_id" value="{{ offer.service_id }}">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="app-card p-4 mb-4">
+          <h2 class="h5 mb-3"><i class="bi bi-calendar-week text-accent"></i> Date & time</h2>
+          <div class="mb-3" style="max-width: 260px;">
+            <label class="form-label" for="booking_date">Date</label>
+            <input type="date" class="form-control" id="booking_date" name="booking_date"
+                   value="{{ chosen_date.isoformat() }}" min="{{ min_date.isoformat() }}" max="{{ max_date.isoformat() }}" required>
+          </div>
+          <label class="form-label d-block">Time slot <span class="small text-muted-soft">(crossed-out slots are booked or past)</span></label>
+          <div class="slot-grid" id="slot-grid" data-provider="{{ offer.provider_id }}">
+            {% for slot in slots %}
+              <input type="radio" class="btn-check" name="time_slot" id="slot-{{ loop.index }}" value="{{ slot.time }}"
+                     {{ 'disabled' if not slot.available }} {{ 'checked' if form.get('time_slot') == slot.time and slot.available }} required>
+              <label class="btn btn-outline-accent" for="slot-{{ loop.index }}">{{ slot.time }}</label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="app-card p-4">
+          <h2 class="h5 mb-3"><i class="bi bi-geo-alt text-accent"></i> Address & details</h2>
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label" for="address">Address</label>
+              <input class="form-control" id="address" name="address" maxlength="255" required
+                     value="{{ form.get('address') or profile.address or '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="city">City</label>
+              <input class="form-control" id="city" name="city" maxlength="60" required
+                     value="{{ form.get('city') or profile.city or offer.city }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="problem">Describe the problem</label>
+              <textarea class="form-control" id="problem" name="problem" rows="3" maxlength="1000" required>{{ form.get('problem', '') }}</textarea>
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="is_urgent" name="is_urgent" value="1"
+                       data-base="{{ cost.base }}" data-fee="{{ urgent_charge }}" {{ 'checked' if form.get('is_urgent') }}>
+                <label class="form-check-label" for="is_urgent">Urgent service (+{{ urgent_charge|inr }})</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="app-card p-4 mb-4">
+          <div class="small text-muted-soft">Provider</div>
+          <div class="fw-semibold fs-5">{{ offer.provider_name }}</div>
+          <div class="small">{{ ui.stars(offer.avg_rating|float) }} {{ '%.1f'|format(offer.avg_rating|float) }} · {{ offer.experience_years }} yrs exp</div>
+          <div class="small text-muted-soft"><i class="bi bi-geo"></i> {{ offer.city }}</div>
+        </div>
+        <div class="app-card p-4">
+          <h2 class="h6 mb-3">Cost estimate</h2>
+          <div class="d-flex justify-content-between small mb-1"><span>Service charge</span><span>{{ cost.base|inr }}</span></div>
+          <div class="d-flex justify-content-between small mb-2"><span>Urgent charge</span><span id="urgent-amount">{{ cost.urgent|inr }}</span></div>
+          <hr>
+          <div class="d-flex justify-content-between fw-semibold mb-3"><span>Estimated total</span><span class="text-mint" id="total-amount">{{ cost.total|inr }}</span></div>
+          <p class="small text-muted-soft"><i class="bi bi-info-circle"></i> Final price may change after the provider inspects the work.</p>
+          <button type="submit" class="btn btn-accent w-100"><i class="bi bi-check2-circle"></i> Confirm booking</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

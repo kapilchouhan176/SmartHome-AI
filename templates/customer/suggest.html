@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}AI Suggestion{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 860px;">
+  <h1 class="h3 mb-1"><i class="bi bi-magic text-accent"></i> AI Service Suggestion</h1>
+  <p class="text-muted-soft mb-4">Describe the problem in your own words and we'll suggest the right service.</p>
+
+  {% if not model_ready %}
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle"></i> The AI model has not been trained yet.
+      Run <code>python3 train_models.py</code>, then restart the app. Meanwhile, please pick a service below.
+    </div>
+  {% endif %}
+
+  <form method="post" class="app-card p-4 mb-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="form-label" for="problem">What's the problem?</label>
+    <textarea class="form-control mb-3" id="problem" name="problem" rows="3" maxlength="1000" required
+              placeholder="e.g. Water is dripping from the AC indoor unit and it is not cooling">{{ text }}</textarea>
+    <button class="btn btn-accent" type="submit" {{ 'disabled' if not model_ready }}><i class="bi bi-stars"></i> Suggest a service</button>
+  </form>
+
+  {% if result and result.confident %}
+    <div class="app-card p-4 mb-4" style="border-color: var(--accent);">
+      <div class="small text-muted-soft mb-2">Suggested service</div>
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+        <div class="icon-circle"><i class="bi {{ result.service.icon }}"></i></div>
+        <div class="flex-grow-1">
+          <div class="h4 mb-1">{{ result.service.name }}</div>
+          <div class="progress" style="height: 8px; max-width: 280px;">
+            <div class="progress-bar" style="width: {{ result.confidence }}%"></div>
+          </div>
+          <div class="small text-mint mt-1">{{ '%.0f'|format(result.confidence) }}% confident</div>
+        </div>
+        <a href="{{ url_for('main.service_detail', service_id=result.service.id) }}" class="btn btn-accent">
+          See providers <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  {% elif result %}
+    <div class="alert alert-info"><i class="bi bi-question-circle"></i>
+      <strong>Not sure — please pick a service.</strong>
+      {% if result.name %}<span class="small">(Best guess: {{ result.name }}, {{ '%.0f'|format(result.confidence) }}%)</span>{% endif %}
+    </div>
+  {% endif %}
+
+  {% if (result and not result.confident) or not model_ready %}
+    <div class="row g-3">
+      {% for s in services %}
+        <div class="col-6 col-md-3">
+          <a href="{{ url_for('main.service_detail', service_id=s.id) }}" class="text-decoration-none">
+            <div class="app-card hover-lift p-3 text-center h-100">
+              <i class="bi {{ s.icon }} fs-3 text-accent"></i>
+              <div class="small text-body-emphasis mt-1">{{ s.name }}</div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

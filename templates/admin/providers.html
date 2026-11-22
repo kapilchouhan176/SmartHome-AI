@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Provider Verification{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="h3 mb-3"><i class="bi bi-patch-check text-accent"></i> Provider verification</h1>
+  <ul class="nav nav-pills mb-4">
+    {% for s in ('pending', 'verified', 'rejected', 'all') %}
+      <li class="nav-item"><a class="nav-link {{ 'active' if s == status }}" href="{{ url_for('admin.providers', status=s) }}">{{ s|title }}</a></li>
+    {% endfor %}
+  </ul>
+  <div class="app-card p-3 table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Provider</th><th>City</th><th>Exp.</th><th>Services</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+        {% for p in providers %}
+          <tr>
+            <td><strong>{{ p.name }}</strong>{% if not p.is_active %} <span class="badge bg-secondary">Deactivated</span>{% endif %}
+              <div class="small text-muted-soft">{{ p.email }} · {{ p.phone or '-' }}</div>
+              {% if p.bio %}<div class="small">{{ p.bio }}</div>{% endif %}</td>
+            <td>{{ p.city }}</td>
+            <td>{{ p.experience_years }} yrs</td>
+            <td>{{ p.service_count }}</td>
+            <td><span class="badge status-{{ p.verification_status }} {{ 'bg-warning text-dark' if p.verification_status == 'pending' }}">{{ p.verification_status|title }}</span></td>
+            <td class="text-end text-nowrap">
+              {% for new_status, label, css in [('verified', 'Approve', 'btn-accent'), ('rejected', 'Reject', 'btn-outline-danger')] %}
+                {% if p.verification_status != new_status %}
+                  <form method="post" action="{{ url_for('admin.set_provider_status', provider_id=p.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="status" value="{{ new_status }}">
+                    <button class="btn btn-sm {{ css }}" type="submit">{{ label }}</button>
+                  </form>
+                {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted-soft py-4">No providers in this list.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

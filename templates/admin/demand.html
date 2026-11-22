@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Demand Forecast{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="h3 mb-1"><i class="bi bi-graph-up-arrow text-accent"></i> Booking demand</h1>
+  <p class="text-muted-soft mb-4">Based on booking dates of the last 8 weeks. Forecast = straight trend line (Linear Regression).</p>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="app-card stat-card p-3 h-100">
+        <i class="bi bi-calendar-week text-accent"></i>
+        <div class="stat-value">{{ demand.overall[-1] }}</div>
+        <div class="stat-label">Bookings in the last 7 days</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="app-card stat-card p-3 h-100">
+        <i class="bi bi-magic text-accent"></i>
+        <div class="stat-value">{{ demand.forecast }}</div>
+        <div class="stat-label">Forecast for next 7 days</div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6">
+      <div class="app-card stat-card p-3 h-100">
+        <i class="bi {{ 'bi-arrow-up-right' if demand.slope > 0 else ('bi-arrow-down-right' if demand.slope < 0 else 'bi-arrow-right') }} text-accent"></i>
+        <div class="stat-value">{{ '%+.1f'|format(demand.slope) }}</div>
+        <div class="stat-label">Trend: change in bookings per week</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-card p-4 mb-4">
+    <h2 class="h5 mb-3">Weekly bookings and next-week forecast</h2>
+    {% if demand.overall|sum == 0 %}
+      <p class="text-muted-soft mb-0">Not enough booking history yet.</p>
+    {% else %}
+      <canvas id="trendChart" height="100"></canvas>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="app-card p-4 h-100">
+        <h2 class="h5 mb-3">Busiest weekdays per service</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle text-center mb-0">
+            <thead><tr><th class="text-start">Service</th>{% for d in demand.weekdays %}<th>{{ d }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for name, counts in demand.heatmap.rows %}
+                <tr>
+                  <td class="text-start small">{{ name }}</td>
+                  {% for n in counts %}
+                    {% set level = (n / demand.heatmap.max) if demand.heatmap.max else 0 %}
+                    <td class="small" style="background: rgba(116, 155, 19, {{ '%.2f'|format(level * 0.85) }});{% if level > 0.6 %} color: #fff;{% endif %}">{{ n or '' }}</td>
+                  {% endfor %}
+                </tr>
+              {% else %}
+                <tr><td colspan="8" class="text-muted-soft py-3">No bookings yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="small text-muted-soft mt-2 mb-0">Darker cell = more bookings on that weekday (all time).</p>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="app-card p-4 h-100">
+        <h2 class="h5 mb-3">Forecast per service</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Service</th><th class="text-center">Last 7 days</th><th class="text-center">Next 7 days</th><th class="text-center">Trend</th></tr></thead>
+            <tbody>
+              {% for s in demand.services %}
+                <tr>
+                  <td class="small"><i class="bi {{ s.icon }} text-accent"></i> {{ s.name }}</td>
+                  <td class="text-center">{{ s.last_week }}</td>
+                  <td class="text-center fw-semibold text-mint">{{ s.forecast }}</td>
+                  <td class="text-center">
+                    {% if s.slope > 0.05 %}<i class="bi bi-arrow-up-right text-accent" title="Rising"></i>
+                    {% elif s.slope < -0.05 %}<i class="bi bi-arrow-down-right text-danger" title="Falling"></i>
+                    {% else %}<i class="bi bi-arrow-right text-muted-soft" title="Flat"></i>{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="small text-muted-soft mt-3"><i class="bi bi-info-circle"></i>
+    A trend line on 8 weekly points is a rough guide, not an exact prediction. More real bookings make it more reliable.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if demand.overall|sum > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // Actual weekly bookings, plus a dashed line joining the last week to the forecast.
+  const actual = {{ demand.overall|tojson }};
+  const forecastLine = actual.map(() => null);
+  forecastLine[actual.length - 1] = actual[actual.length - 1];
+  Chart.defaults.color = "#6b7280";
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: [...{{ demand.labels|tojson }}, "Next week"],
+      datasets: [
+        { label: "Bookings", data: actual, borderColor: "#749b13", backgroundColor: "#749b13", tension: 0.3 },
+        { label: "Forecast", data: [...forecastLine, {{ demand.forecast }}], borderColor: "#2563eb",
+          backgroundColor: "#2563eb", borderDash: [6, 6] }
+      ]
+    },
+    options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+</script>
+{% endif %}
+{% endblock %}
