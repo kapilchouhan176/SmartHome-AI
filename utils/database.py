@@ -10,6 +10,11 @@ from flask import g
 
 _pool = None
 
+# MySQL 8's standard mode. Cloud hosts like Aiven default to stricter ANSI mode,
+# so we ask for the same mode everywhere and the app behaves the same.
+SQL_MODE = ("ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,"
+            "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION")
+
 
 def init_db(app):
     """Create the connection pool once, when the app starts."""
@@ -23,6 +28,8 @@ def init_db(app):
         password=app.config["DB_PASSWORD"],
         database=app.config["DB_NAME"],
         autocommit=False,
+        time_zone=app.config["DB_TIME_ZONE"],
+        sql_mode=SQL_MODE,
         **ssl_options(app.config["DB_SSL_CA"]),
     )
     # Return the connection to the pool at the end of every request

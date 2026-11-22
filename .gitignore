@@ -3,4 +3,5 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
-it
+# Cloud database certificate (added on Render as a Secret File)
+ca.pem

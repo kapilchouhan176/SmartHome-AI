@@ -32,6 +32,7 @@ class Config:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "home_service_db")
     DB_SSL_CA = os.getenv("DB_SSL_CA", "")   # path to the CA certificate of a cloud MySQL; empty locally
+    DB_TIME_ZONE = os.getenv("DB_TIME_ZONE", "+05:30")   # show DB timestamps in Indian time
 
     # --- Booking ---
     # Fixed 2-hour time slots a customer can choose from
